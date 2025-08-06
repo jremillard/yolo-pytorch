@@ -13,7 +13,7 @@ from models.yolov9 import YOLOv9
 def export_onnx(
     out_path: Path,
     weights: Path | None = None,
-    variant: str = "n",
+    variant: str = "t",
     num_classes: int = 80,
     img_size: int = 256,
 ) -> None:
@@ -39,7 +39,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Export YOLOv9 model to ONNX")
     parser.add_argument("out", type=Path, help="output ONNX file path")
     parser.add_argument("--weights", type=Path, help="optional path to model weights")
-    parser.add_argument("--variant", type=str, default="n")
+    parser.add_argument("--variant", type=str, default="t")
     parser.add_argument("--num-classes", type=int, default=80)
     parser.add_argument("--img-size", type=int, default=256)
     return parser.parse_args()

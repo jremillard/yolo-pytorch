@@ -12,4 +12,5 @@ TODO for yolov9-pytorch
 - [T8] Define project dependencies in requirements.txt.
 - [T9] Organize project structure (models, utils, data, configs).
 - [T10] Ensure modular architecture for easy customization.
+- ~~[T11] Support model variants (t, s, m, c, e).~~
 

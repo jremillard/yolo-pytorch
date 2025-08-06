@@ -17,7 +17,7 @@ def test_inference_pipeline(tmp_path):
     img.save(img_path)
     tensor = load_image(img_path, 256)
     assert tensor.shape == (1, 3, 256, 256)
-    model = YOLOv9("n", num_classes=80)
+    model = YOLOv9("t", num_classes=80)
     preds = run_inference(model, tensor)
     assert len(preds) == 3
     assert preds[0].shape == (1, 84, 32, 32)
