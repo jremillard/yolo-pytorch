@@ -9,8 +9,6 @@ TODO for yolov9-pytorch
 - ~~[T5] Add training script supporting custom datasets.~~
 - ~~[T6] Create inference script.~~
 - ~~[T7] Enable model export to ONNX.~~
-- [T8] Define project dependencies in requirements.txt.
-- [T9] Organize project structure (models, utils, data, configs).
-- [T10] Ensure modular architecture for easy customization.
-- ~~[T11] Support model variants (t, s, m, c, e).~~
+- ~~[T8] Support model variants (t, s, m, c, e).~~
+- -- [t9] Verify that the org and pytorch inference results match.
 
