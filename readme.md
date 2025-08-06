@@ -33,7 +33,6 @@ yolo-pytorch/
 ├── train.py                # Training script
 ├── inference.py            # Inference script
 ├── export.py               # Model export (ONNX, TorchScript)
-└── requirements.txt        # Dependencies
 ```
 
 ## YOLOv9 Paper
