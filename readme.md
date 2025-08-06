@@ -14,7 +14,8 @@ This project provides a pure PyTorch implementation of YOLOv9, focusing on:
 ### Model Components
 
 ```
-YOLOv9
+Orginal YOLO v9 code.
+yolov9-org
 ├── Backbone (CSPDarknet + GELAN)
 ├── Neck (PAN-FPN with PGI)
 ├── Detection Head (Anchor-free)
