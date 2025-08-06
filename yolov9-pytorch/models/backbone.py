@@ -70,19 +70,26 @@ class GELAN(nn.Module):
 class CSPDarknetGELAN(nn.Module):
     """CSPDarknet backbone with GELAN blocks.
 
+    The backbone width (``base_channels``) and depth (``depth_multiplier``)
+    can be adjusted to create the various model scales (nano, small, etc.).
     The network returns three feature maps corresponding to strides 8, 16
     and 32 relative to the input resolution.  It is purposely simplified
     but captures the essence of the original YOLOv9 backbone.
     """
 
-    def __init__(self, base_channels: int = 32) -> None:
+    def __init__(self, base_channels: int = 32, depth_multiplier: float = 1.0) -> None:
         super().__init__()
         c = base_channels
+
+        def d(n: int) -> int:
+            """Round ``n`` based on ``depth_multiplier`` ensuring at least 1."""
+            return max(int(round(n * depth_multiplier)), 1)
+
         self.stem = Conv(3, c, k=3, s=2)
-        self.stage1 = nn.Sequential(Conv(c, c * 2, k=3, s=2), GELAN(c * 2))
-        self.stage2 = nn.Sequential(Conv(c * 2, c * 4, k=3, s=2), GELAN(c * 4))
-        self.stage3 = nn.Sequential(Conv(c * 4, c * 8, k=3, s=2), GELAN(c * 8))
-        self.stage4 = nn.Sequential(Conv(c * 8, c * 16, k=3, s=2), GELAN(c * 16))
+        self.stage1 = nn.Sequential(Conv(c, c * 2, k=3, s=2), GELAN(c * 2, n=d(1)))
+        self.stage2 = nn.Sequential(Conv(c * 2, c * 4, k=3, s=2), GELAN(c * 4, n=d(2)))
+        self.stage3 = nn.Sequential(Conv(c * 4, c * 8, k=3, s=2), GELAN(c * 8, n=d(3)))
+        self.stage4 = nn.Sequential(Conv(c * 8, c * 16, k=3, s=2), GELAN(c * 16, n=d(1)))
 
     def forward(self, x: torch.Tensor) -> List[torch.Tensor]:
         """Forward pass returning multi-scale feature maps.
