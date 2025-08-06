@@ -1,4 +1,11 @@
-"""Simple training script for YOLOv9 using COCO annotations."""
+"""Simple training script for YOLOv9 using COCO annotations.
+
+This script now supports weighting the individual loss components and
+fine-tuning only a subset of layers.  Use the ``--box-weight`` and
+``--cls-weight`` options to scale the IoU and classification terms.
+``--finetune`` accepts ``first:N`` or ``last:N`` to keep only the first or
+last ``N`` parameter tensors trainable.
+"""
 
 from __future__ import annotations
 
@@ -56,13 +63,36 @@ def build_targets(
 def train(args: argparse.Namespace) -> None:
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = YOLOv9(args.variant, num_classes=args.num_classes).to(device)
+
+    # Freeze parameters according to fine-tuning directive
+    if args.finetune:
+        mode, n_str = args.finetune.split(":", 1)
+        n = int(n_str)
+        params = list(model.parameters())
+        if n <= 0 or n > len(params):
+            raise ValueError("invalid layer count for finetune")
+        if mode == "last":
+            freeze = params[:-n]
+        elif mode == "first":
+            freeze = params[n:]
+        else:
+            raise ValueError("finetune must be 'first:N' or 'last:N'")
+        for p in freeze:
+            p.requires_grad = False
+
     dataset = COCODataset(args.images, args.annotations, img_size=args.img_size)
     loader = DataLoader(dataset, batch_size=args.batch, shuffle=True, collate_fn=collate_fn)
-    criterion = YOLOLoss(args.num_classes)
-    optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=0.9)
+    criterion = YOLOLoss(
+        args.num_classes, box_weight=args.box_weight, cls_weight=args.cls_weight
+    )
+    optimizer = optim.SGD(
+        filter(lambda p: p.requires_grad, model.parameters()),
+        lr=args.lr,
+        momentum=0.9,
+    )
     model.train()
     for epoch in range(args.epochs):
-        for imgs, targets in loader:
+        for step, (imgs, targets) in enumerate(loader, 1):
             imgs = imgs.to(device)
             preds = model(imgs)
             t = build_targets(targets, preds, args.num_classes, args.img_size)
@@ -70,7 +100,11 @@ def train(args: argparse.Namespace) -> None:
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-        print(f"epoch {epoch + 1}: loss={loss.item():.4f}")
+            print(
+                f"epoch {epoch + 1}/{args.epochs}, step {step}/{len(loader)}, loss={loss.item():.4f}"
+            )
+
+    torch.save(model.state_dict(), args.output)
 
 
 def parse_args() -> argparse.Namespace:
@@ -83,6 +117,24 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--variant", type=str, default="n")
     parser.add_argument("--num-classes", type=int, default=80)
     parser.add_argument("--lr", type=float, default=1e-3)
+    parser.add_argument(
+        "--box-weight", type=float, default=1.0, help="Weight for bounding box IoU loss"
+    )
+    parser.add_argument(
+        "--cls-weight", type=float, default=1.0, help="Weight for classification loss"
+    )
+    parser.add_argument(
+        "--finetune",
+        type=str,
+        default=None,
+        help="Fine-tune only a subset of layers: format 'first:N' or 'last:N'",
+    )
+    parser.add_argument(
+        "--output",
+        type=Path,
+        default=Path("yolov9_finetuned.pt"),
+        help="Path to save trained weights",
+    )
     return parser.parse_args()
 
 
