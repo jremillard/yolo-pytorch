@@ -11,6 +11,19 @@ This project provides a pure PyTorch implementation of YOLOv9, focusing on:
 - Training and inference capabilities
 - Support for custom datasets
 
+## Model Variants
+
+This implementation supports multiple model scales:
+
+- **YOLOv9t** – tiny
+- **YOLOv9s** – small
+- **YOLOv9m** – medium
+- **YOLOv9c** – compact
+- **YOLOv9e** – extended
+
+Choose a variant by passing `variant="t"|"s"|"m"|"c"|"e"` to the
+`YOLOv9` constructor or helper functions.
+
 ### Model Components
 
 ```

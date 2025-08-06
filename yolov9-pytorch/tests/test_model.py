@@ -14,7 +14,7 @@ from models.yolov9 import YOLOv9
 
 
 def test_forward_shapes():
-    model = YOLOv9("n", num_classes=80)
+    model = YOLOv9("t", num_classes=80)
     x = torch.randn(1, 3, 256, 256)
     outputs = model(x)
     assert len(outputs) == 3
@@ -44,10 +44,10 @@ def test_pretrained_loading():
 
 
 def test_from_pretrained_roundtrip(tmp_path):
-    model = YOLOv9("n", num_classes=80)
+    model = YOLOv9("t", num_classes=80)
     weight_file = tmp_path / "weights.pt"
     torch.save(model.state_dict(), weight_file)
-    loaded = YOLOv9.from_pretrained(str(weight_file), variant="n", num_classes=80)
+    loaded = YOLOv9.from_pretrained(str(weight_file), variant="t", num_classes=80)
 
     # ensure all parameters are identical
     for k, v in model.state_dict().items():
@@ -61,7 +61,7 @@ def test_from_pretrained_roundtrip(tmp_path):
 
 
 def test_from_pretrained_variant_mismatch(tmp_path):
-    model = YOLOv9("n", num_classes=80)
+    model = YOLOv9("t", num_classes=80)
     weight_file = tmp_path / "weights.pt"
     torch.save(model.state_dict(), weight_file)
     with pytest.raises(ValueError, match="variant"):
@@ -69,8 +69,8 @@ def test_from_pretrained_variant_mismatch(tmp_path):
 
 
 def test_from_pretrained_class_mismatch(tmp_path):
-    model = YOLOv9("n", num_classes=80)
+    model = YOLOv9("t", num_classes=80)
     weight_file = tmp_path / "weights.pt"
     torch.save(model.state_dict(), weight_file)
     with pytest.raises(ValueError, match="classes"):
-        YOLOv9.from_pretrained(str(weight_file), variant="n", num_classes=42)
+        YOLOv9.from_pretrained(str(weight_file), variant="t", num_classes=42)

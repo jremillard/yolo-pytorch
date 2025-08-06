@@ -114,7 +114,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--epochs", type=int, default=1)
     parser.add_argument("--batch", type=int, default=4)
     parser.add_argument("--img-size", type=int, default=256)
-    parser.add_argument("--variant", type=str, default="n")
+    parser.add_argument("--variant", type=str, default="t")
     parser.add_argument("--num-classes", type=int, default=80)
     parser.add_argument("--lr", type=float, default=1e-3)
     parser.add_argument(

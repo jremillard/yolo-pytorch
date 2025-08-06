@@ -59,13 +59,19 @@ class Detect(nn.Module):
 
 
 class YOLOv9(nn.Module):
-    """Unified YOLOv9 model with configurable variants."""
+    """Unified YOLOv9 model with configurable variants.
+
+    Supported variants are ``t`` (tiny), ``s`` (small), ``m`` (medium),
+    ``c`` (compact) and ``e`` (extended).  The tuple in :data:`VARIANTS`
+    defines ``(base_channels, depth_multiplier)`` for each configuration.
+    """
 
     VARIANTS: Dict[str, Tuple[int, float]] = {
-        "n": (16, 0.33),
+        "t": (16, 0.33),
         "s": (32, 0.33),
         "m": (48, 0.67),
-        "l": (64, 1.0),
+        "c": (64, 1.0),
+        "e": (80, 1.0),
     }
 
     def __init__(self, variant: str = "s", num_classes: int = 80) -> None:
@@ -116,7 +122,7 @@ class YOLOv9(nn.Module):
         else:
             state = ckpt
 
-        mapping = {16: "n", 32: "s", 48: "m", 64: "l"}
+        mapping = {16: "t", 32: "s", 48: "m", 64: "c", 80: "e"}
         ch0 = None
         if "backbone.stem.conv.weight" in state:
             ch0 = state["backbone.stem.conv.weight"].shape[0]
