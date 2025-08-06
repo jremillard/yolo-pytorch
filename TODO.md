@@ -1,6 +1,6 @@
 # TODO
 
-- [T1] Implement backbone (CSPDarknet + GELAN).
+- ~~[T1] Implement backbone (CSPDarknet + GELAN).~~
 - [T2] Develop PAN-FPN with PGI neck.
 - [T3] Build anchor-free detection head.
 - [T4] Implement loss functions (Focal + IoU + Classification).
