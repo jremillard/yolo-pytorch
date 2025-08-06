@@ -37,7 +37,9 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run YOLOv9 inference on an image")
     parser.add_argument("image", type=Path, help="path to the image file")
     parser.add_argument("--weights", type=Path, help="optional path to model weights")
-    parser.add_argument("--variant", type=str, default="n", help="model variant (n/s/m/l)")
+    parser.add_argument(
+        "--variant", type=str, default="t", help="model variant (t/s/m/c/e)"
+    )
     parser.add_argument("--num-classes", type=int, default=80, help="number of model classes")
     parser.add_argument("--img-size", type=int, default=256, help="inference image size")
     return parser.parse_args()
