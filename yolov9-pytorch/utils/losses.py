@@ -1,4 +1,10 @@
-"""Loss functions for YOLOv9 training."""
+"""Loss functions used during training of the simplified YOLOv9 model.
+
+Only a handful of components are required for the unit tests in this kata and
+they are implemented below with extensive comments.  The intent is to make the
+mathematics behind each loss transparent rather than to provide the most
+optimised or feature complete version of the original code.
+"""
 
 from __future__ import annotations
 
@@ -9,15 +15,22 @@ import torch.nn as nn
 
 
 def box_iou(box1: torch.Tensor, box2: torch.Tensor) -> torch.Tensor:
-    """Compute IoU between two sets of boxes.
+    """Compute pairwise IoU between two sets of axis-aligned boxes.
 
-    Boxes are expected in ``(x1, y1, x2, y2)`` format.
+    Args:
+        box1: Tensor of shape ``(N, 4)`` in ``(x1, y1, x2, y2)`` format.
+        box2: Tensor of shape ``(M, 4)`` in the same format.
+
+    Returns:
+        ``(N, M)`` tensor containing the IoU for every pair of boxes.
     """
-    # Intersection
+
+    # Intersection top left & bottom right corners.
     tl = torch.max(box1[:, None, :2], box2[:, :2])
     br = torch.min(box1[:, None, 2:], box2[:, 2:])
     inter = (br - tl).clamp(min=0).prod(dim=2)
-    # Areas
+
+    # Areas of individual boxes and union area.
     area1 = (box1[:, 2:] - box1[:, :2]).prod(dim=1)
     area2 = (box2[:, 2:] - box2[:, :2]).prod(dim=1)
     union = area1[:, None] + area2 - inter
@@ -25,13 +38,20 @@ def box_iou(box1: torch.Tensor, box2: torch.Tensor) -> torch.Tensor:
 
 
 class IoULoss(nn.Module):
-    """IoU loss returning ``1 - IoU``."""
+    """Loss based on the Intersection over Union metric.
+
+    The module expects ``pred`` and ``target`` tensors containing bounding
+    boxes in ``(x1, y1, x2, y2)`` format.  The loss is defined as ``1 - IoU`` so
+    that perfect overlap yields zero loss.
+    """
 
     def __init__(self, reduction: str = "mean") -> None:
         super().__init__()
         self.reduction = reduction
 
     def forward(self, pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:  # noqa: D401
+        """Compute the IoU loss between ``pred`` and ``target`` boxes."""
+
         iou = box_iou(pred, target)
         loss = 1.0 - iou
         if self.reduction == "mean":
@@ -42,7 +62,12 @@ class IoULoss(nn.Module):
 
 
 class FocalLoss(nn.Module):
-    """Binary focal loss with logits."""
+    """Binary focal loss with logits.
+
+    Focal loss down-weights easy examples and focuses the training on hard
+    negatives.  This implementation operates directly on logits and therefore
+    wraps :class:`torch.nn.BCEWithLogitsLoss`.
+    """
 
     def __init__(self, alpha: float = 0.25, gamma: float = 2.0, reduction: str = "mean") -> None:
         super().__init__()
@@ -52,6 +77,8 @@ class FocalLoss(nn.Module):
         self.bce = nn.BCEWithLogitsLoss(reduction="none")
 
     def forward(self, pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:  # noqa: D401
+        """Compute focal loss given raw predictions and targets."""
+
         bce = self.bce(pred, target)
         prob = torch.sigmoid(pred)
         pt = target * prob + (1 - target) * (1 - prob)
@@ -65,18 +92,26 @@ class FocalLoss(nn.Module):
 
 
 class ClassificationLoss(nn.Module):
-    """Multi-label classification loss using BCE with logits."""
+    """Multi-label classification loss implemented with BCE with logits."""
 
     def __init__(self, reduction: str = "mean") -> None:
         super().__init__()
         self.loss = nn.BCEWithLogitsLoss(reduction=reduction)
 
     def forward(self, pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:  # noqa: D401
+        """Return standard binary cross-entropy loss for multi-label targets."""
+
         return self.loss(pred, target)
 
 
 class YOLOLoss(nn.Module):
-    """Composite loss combining classification focal loss and IoU loss."""
+    """Composite detection loss combining classification and box regression.
+
+    The loss expects predictions for multiple feature levels and a dictionary of
+    target tensors with keys ``"cls"``, ``"box"`` and ``"mask"``.  The mask
+    indicates which spatial locations contain objects.  For simplicity only IoU
+    loss and focal classification loss are used.
+    """
 
     def __init__(self, num_classes: int, box_weight: float = 1.0, cls_weight: float = 1.0) -> None:
         super().__init__()
@@ -87,10 +122,15 @@ class YOLOLoss(nn.Module):
         self.iou = IoULoss()
 
     def forward(self, preds: List[torch.Tensor], targets: dict) -> torch.Tensor:  # noqa: D401
+        """Compute the aggregate loss over all feature levels."""
+
         total = torch.tensor(0.0, device=preds[0].device)
         for p, t_cls, t_box, t_mask in zip(preds, targets["cls"], targets["box"], targets["mask"]):
+            # Split predicted tensor into box and classification parts.
             box_pred = p[:, :4]
             cls_pred = p[:, 4:]
+
+            # Only compute loss for positive locations as indicated by ``mask``.
             mask = t_mask.bool().squeeze(1)
             if mask.any():
                 box_loss = self.iou(box_pred.permute(0, 2, 3, 1)[mask], t_box.permute(0, 2, 3, 1)[mask])
