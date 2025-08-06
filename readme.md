@@ -36,3 +36,8 @@ yolo-pytorch/
 └── requirements.txt        # Dependencies
 ```
 
+## YOLOv9 Paper
+
+The repository includes the LaTeX source for the YOLOv9 paper under
+`arXiv-2402.13616v2/yolov9_arxiv.tex` for reference.
+
