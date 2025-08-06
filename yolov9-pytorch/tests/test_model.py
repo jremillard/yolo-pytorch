@@ -1,6 +1,9 @@
+import io
 import sys
+import warnings
 from pathlib import Path
 
+import pytest
 import torch
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -33,3 +36,41 @@ def test_pretrained_loading():
         if hasattr(model.backbone.stem, "conv"):
             weight = model.backbone.stem.conv.weight
             assert isinstance(weight, torch.Tensor)
+        else:
+            warnings.warn(
+                f"model variant '{model.variant}' has no stem.conv; skipping weight check",
+                RuntimeWarning,
+            )
+
+
+def test_from_pretrained_roundtrip(tmp_path):
+    model = YOLOv9("n", num_classes=80)
+    weight_file = tmp_path / "weights.pt"
+    torch.save(model.state_dict(), weight_file)
+    loaded = YOLOv9.from_pretrained(str(weight_file), variant="n", num_classes=80)
+
+    # ensure all parameters are identical
+    for k, v in model.state_dict().items():
+        assert torch.equal(v, loaded.state_dict()[k])
+
+    # compare serialized state dict bytes
+    buf1, buf2 = io.BytesIO(), io.BytesIO()
+    torch.save(model.state_dict(), buf1)
+    torch.save(loaded.state_dict(), buf2)
+    assert buf1.getvalue() == buf2.getvalue()
+
+
+def test_from_pretrained_variant_mismatch(tmp_path):
+    model = YOLOv9("n", num_classes=80)
+    weight_file = tmp_path / "weights.pt"
+    torch.save(model.state_dict(), weight_file)
+    with pytest.raises(ValueError, match="variant"):
+        YOLOv9.from_pretrained(str(weight_file), variant="s", num_classes=80)
+
+
+def test_from_pretrained_class_mismatch(tmp_path):
+    model = YOLOv9("n", num_classes=80)
+    weight_file = tmp_path / "weights.pt"
+    torch.save(model.state_dict(), weight_file)
+    with pytest.raises(ValueError, match="classes"):
+        YOLOv9.from_pretrained(str(weight_file), variant="n", num_classes=42)
