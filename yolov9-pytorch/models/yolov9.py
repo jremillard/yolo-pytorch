@@ -5,6 +5,8 @@ from __future__ import annotations
 from typing import Dict, List, Tuple
 
 import sys
+import warnings
+
 import torch
 import torch.nn as nn
 
@@ -104,17 +106,46 @@ class YOLOv9(nn.Module):
             sys.modules[mod] = DummyModule(mod)  # type: ignore[assignment]
 
         ckpt = torch.load(weight_path, map_location="cpu", weights_only=False)
-        state = ckpt["model"].state_dict() if isinstance(ckpt, dict) else ckpt
+        if isinstance(ckpt, dict):
+            if "model" in ckpt and hasattr(ckpt["model"], "state_dict"):
+                state = ckpt["model"].state_dict()
+            elif "state_dict" in ckpt and isinstance(ckpt["state_dict"], dict):
+                state = ckpt["state_dict"]
+            else:
+                state = ckpt
+        else:
+            state = ckpt
 
-        # Infer model variant from the first convolution's channel count
-        if variant is None:
-            ch0 = None
+        mapping = {16: "n", 32: "s", 48: "m", 64: "l"}
+        ch0 = None
+        if "backbone.stem.conv.weight" in state:
+            ch0 = state["backbone.stem.conv.weight"].shape[0]
+        else:
+            warnings.warn(
+                "checkpoint missing 'backbone.stem.conv.weight'; variant inference may be unreliable",
+                RuntimeWarning,
+            )
             for key in ("model.0.conv.weight", "model.1.conv.weight"):
                 if key in state:
                     ch0 = state[key].shape[0]
                     break
-            mapping = {16: "n", 32: "s", 48: "m", 64: "l"}
-            variant = mapping.get(ch0, "s")
+        inferred_variant = mapping.get(ch0)
+        if variant is None:
+            variant = inferred_variant or "s"
+        elif inferred_variant and variant != inferred_variant:
+            raise ValueError(
+                f"checkpoint is for variant '{inferred_variant}' but variant '{variant}' was requested"
+            )
+
+        nc_ckpt = None
+        for key in ("model.24.m.0.weight", "model.23.m.0.weight", "detect.m.0.weight"):
+            if key in state:
+                nc_ckpt = state[key].shape[0] - 4
+                break
+        if nc_ckpt is not None and nc_ckpt != num_classes:
+            raise ValueError(
+                f"checkpoint has {nc_ckpt} classes but model built for {num_classes}"
+            )
 
         model = cls(variant=variant, num_classes=num_classes)
         own = model.state_dict()
