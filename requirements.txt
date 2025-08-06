@@ -1,1 +1,10 @@
-pip install torch torchvision
+matplotlib
+numpy
+opencv-python
+Pillow
+PyYAML
+scipy
+torch
+torchvision
+onnx
+scikit-learn<=1.1.2
