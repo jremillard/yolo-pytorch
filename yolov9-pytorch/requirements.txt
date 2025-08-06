@@ -10,3 +10,4 @@ onnx==1.18.0
 scikit-learn==1.7.1
 tqdm 
 pycocotools
+opencv-python-headless
