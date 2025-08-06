@@ -2,4 +2,5 @@
 
 - Do not modify the YOLO org model located in `yolov9-org` or its artifacts.
 - Do not modify the paper located in `arXiv-2402.13616v2`.
-- After making changes, run a Python unit tests before finishing.
+- After making changes, run a Python unit tests before finishing, pytest -q
+- Do not copy any of the code or docs from yolov9-org directory, it must be rewritten from scratch.

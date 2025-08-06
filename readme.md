@@ -25,14 +25,17 @@ yolov9-org
 ## Project Structure
 
 ```
-yolo-pytorch/
+yolov9-pytorch/
 ├── models/
 ├── utils/
+├── tests/
 ├── data/
 ├── configs/
 ├── train.py                # Training script
 ├── inference.py            # Inference script
 ├── export.py               # Model export (ONNX, TorchScript)
+├── requirements.txt
+
 ```
 
 ## YOLOv9 Paper
