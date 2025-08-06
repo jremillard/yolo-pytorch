@@ -1,9 +1,11 @@
 """YOLOv9 detection model implemented from scratch.
 
-Only the core architectural pieces required for inference are reproduced in
-this project.  The goal is not to be feature complete but to provide a clear
-and well commented PyTorch implementation that mirrors the design presented in
-the paper and in the reference code base.
+This module provides a compact yet practical re-implementation of the
+architecture.  The focus is on readability rather than absolute feature
+parity, but the pieces included here are sufficient to load official
+checkpoints, fine tune the network and run inference.  Advanced training
+niceties from the full reference code base are intentionally omitted in favour
+of a minimal, easy to understand design.
 """
 
 from __future__ import annotations

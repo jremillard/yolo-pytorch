@@ -1,9 +1,11 @@
 """Loss functions used during training of the simplified YOLOv9 model.
 
-Only a handful of components are required for the unit tests in this kata and
-they are implemented below with extensive comments.  The intent is to make the
-mathematics behind each loss transparent rather than to provide the most
-optimised or feature complete version of the original code.
+The aim is to keep the implementation concise while remaining useful for real
+training scenarios.  The losses defined here are intentionally lightweight, but
+they are sufficient to fine tune models initialised from official weights and
+to support end-to-end inference.  Each function is accompanied by detailed
+comments that favour clarity over absolute feature parity with the reference
+code base.
 """
 
 from __future__ import annotations
@@ -109,8 +111,11 @@ class YOLOLoss(nn.Module):
 
     The loss expects predictions for multiple feature levels and a dictionary of
     target tensors with keys ``"cls"``, ``"box"`` and ``"mask"``.  The mask
-    indicates which spatial locations contain objects.  For simplicity only IoU
-    loss and focal classification loss are used.
+    indicates which spatial locations contain objects and both the box and
+    classification terms are evaluated only at those positive locations.  This
+    keeps the implementation concise while remaining suitable for fine tuning
+    the simplified model.  For simplicity only IoU loss and focal classification
+    loss are used.
     """
 
     def __init__(self, num_classes: int, box_weight: float = 1.0, cls_weight: float = 1.0) -> None:
