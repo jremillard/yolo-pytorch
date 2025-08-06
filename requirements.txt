@@ -7,4 +7,4 @@ scipy
 torch
 torchvision
 onnx
-scikit-learn<=1.1.2
+scikit-learn
